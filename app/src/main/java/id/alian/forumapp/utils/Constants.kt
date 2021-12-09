@@ -38,4 +38,5 @@ object Constants {
     const val CHOICE_IMAGE = "pilih gambar terlebih dahulu"
     const val SERVER_ERROR = "Server Error"
     const val FAILED = "Failed"
+    const val TOKEN_PREF_KEY = "Token Preferences"
 }

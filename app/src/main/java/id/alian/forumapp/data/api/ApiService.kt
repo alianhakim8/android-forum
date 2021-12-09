@@ -30,7 +30,7 @@ interface ApiService {
         }
     }
 
-    // auth route
+    // auth
     @FormUrlEncoded
     @POST("$AUTH/login")
     suspend fun login(
@@ -49,7 +49,7 @@ interface ApiService {
         @Header(HEADER_AUTH) token: String,
     ): Response<User>
 
-    // question route
+    // question
     @GET("$QUESTION/all")
     suspend fun getQuestions(): Response<QuestionResponse>
 
@@ -72,7 +72,7 @@ interface ApiService {
         @Path("imageName") imageName: String
     ): Response<Unit>
 
-    // answer Route
+    // answer
     @GET("$ANSWER/{question_id}")
     suspend fun getAnswerByQuestionId(
         @Path("question_id") questionId: Int

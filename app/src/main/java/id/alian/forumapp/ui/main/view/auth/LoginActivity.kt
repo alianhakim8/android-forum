@@ -32,12 +32,20 @@ class LoginActivity : AppCompatActivity(), KodeinAware {
 
         viewModel = ViewModelProvider(this, factory)[LoginViewModel::class.java]
 
+        // view bind
         binding.btnLogin.setOnClickListener {
             val email = binding.etEmail.text.toString().trim()
             val pass = binding.etPassword.text.toString().trim()
             viewModel.login(email, pass)
         }
 
+        binding.btnToRegister.setOnClickListener {
+            Intent(this, RegisterActivity::class.java).also {
+                startActivity(it)
+            }
+        }
+
+        // viewModel
         viewModel.login.observe(this, {
             when (it) {
                 is Resource.Success -> {
@@ -67,10 +75,7 @@ class LoginActivity : AppCompatActivity(), KodeinAware {
             }
         })
 
-        binding.btnToRegister.setOnClickListener {
-            Intent(this, RegisterActivity::class.java).also {
-                startActivity(it)
-            }
-        }
+        viewModel.checkLogin()
+
     }
 }

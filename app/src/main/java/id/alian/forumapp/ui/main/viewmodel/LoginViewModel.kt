@@ -19,6 +19,8 @@ import id.alian.forumapp.utils.Constants.CONVERSION_ERROR
 import id.alian.forumapp.utils.Constants.LOGIN_VIEW_MODEL
 import id.alian.forumapp.utils.Constants.NETWORK_FAILURE
 import id.alian.forumapp.utils.Constants.NO_INTERNET
+import id.alian.forumapp.utils.Constants.TOKEN
+import id.alian.forumapp.utils.Constants.TOKEN_PREF_KEY
 import id.alian.forumapp.utils.Resource
 import id.alian.forumapp.utils.ResponseHelper
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +64,18 @@ class LoginViewModel(
                 if (email.isNotEmpty() || password.isNotEmpty()) {
                     val response = repository.login(email, password)
                     login.postValue(ResponseHelper().handleResponse(response))
-                    response.body()?.let { saveUserInfo(it) }
+                    response.body()?.let {
+                        val sharedPref =
+                            app.applicationContext.getSharedPreferences(
+                                TOKEN_PREF_KEY,
+                                Context.MODE_PRIVATE
+                            ) ?: return
+                        with(sharedPref.edit()) {
+                            putString(TOKEN, response.body()!!.data)
+                            apply()
+                        }
+                        saveUserInfo(it)
+                    }
                 } else {
                     login.postValue(Resource.Error(CANNOT_BE_EMPTY))
                 }
@@ -121,5 +134,15 @@ class LoginViewModel(
         } catch (t: Throwable) {
             Log.d(LOGIN_VIEW_MODEL, "getTokenInfo: ${t.message}")
         }
+    }
+
+    fun checkLogin() {
+        val sharedPref =
+            app.applicationContext.getSharedPreferences(
+                TOKEN_PREF_KEY,
+                Context.MODE_PRIVATE
+            ) ?: return
+        val token = sharedPref.getString(TOKEN, "")
+        Log.d(LOGIN_VIEW_MODEL, "checkLogin: $token")
     }
 }
