@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="10dp"
+    android:padding="@dimen/activity_padding"
     tools:context=".ui.main.view.question.AddQuestionActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -25,62 +25,51 @@
         <ImageView
             android:id="@+id/imageViewQuestion"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:src="@drawable/ic_img"
+            android:layout_height="@dimen/image_height"
+            android:contentDescription="@string/label_img_content_desc"
+            android:src="@drawable/ic_add_img"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:contentDescription="@string/img_content_desc" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <EditText
             android:id="@+id/etTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/activity_top_margin"
+            android:autofillHints="fill_hints"
             android:ems="10"
-            android:hint="@string/title"
+            android:hint="@string/label_title"
             android:inputType="textPersonName"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/imageViewQuestion"
-            android:autofillHints="" />
+            app:layout_constraintTop_toBottomOf="@+id/imageViewQuestion" />
 
         <EditText
             android:id="@+id/etDesc"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="@dimen/text_box_height"
+            android:autofillHints="fill_hints"
             android:ems="10"
             android:gravity="top|left"
-            android:hint="@string/desc"
+            android:hint="@string/label_desc"
             android:inputType="textPersonName"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/etTitle"
-            tools:ignore="RtlHardcoded"
-            android:autofillHints="" />
-
-        <Button
-            android:id="@+id/btnSelectImage"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/image_upload"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/etDesc" />
+            tools:ignore="RtlHardcoded" />
 
         <Button
             android:id="@+id/btnAddQuestion"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/send_question"
+            android:text="@string/label_send_question"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btnSelectImage" />
+            app:layout_constraintTop_toBottomOf="@+id/etDesc" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

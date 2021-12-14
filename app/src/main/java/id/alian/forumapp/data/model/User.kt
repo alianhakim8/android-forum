@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 import java.io.Serializable
 
-@Entity(tableName = "user")
+@Entity
 data class User(
     @PrimaryKey(autoGenerate = true)
     @SerializedName("id")
@@ -15,9 +15,9 @@ data class User(
     @SerializedName("email")
     val email: String = "",
     @SerializedName("password")
-    val password: String,
+    val password: String = "",
     @SerializedName("password_confirmation")
-    val passwordConfirmation: String,
+    val passwordConfirmation: String = "",
     @SerializedName("avatar")
-    val avatar: String = ""
+    val avatar: String = "",
 ) : Serializable

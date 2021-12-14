@@ -9,7 +9,6 @@ import id.alian.forumapp.databinding.ActivityLoginBinding
 import id.alian.forumapp.ui.main.view.HomeActivity
 import id.alian.forumapp.ui.main.viewmodel.LoginViewModel
 import id.alian.forumapp.ui.main.viewmodel.factory.LoginViewModelFactory
-import id.alian.forumapp.utils.Constants.TOKEN
 import id.alian.forumapp.utils.Resource
 import id.alian.forumapp.utils.hideKeyboard
 import id.alian.forumapp.utils.snackBar
@@ -51,9 +50,8 @@ class LoginActivity : AppCompatActivity(), KodeinAware {
                 is Resource.Success -> {
                     binding.btnLogin.visibility = View.VISIBLE
                     binding.progressBar.visibility = View.INVISIBLE
-                    Intent(this, HomeActivity::class.java).also { intent_ ->
-                        intent_.putExtra(TOKEN, it.data?.data)
-                        startActivity(intent_)
+                    Intent(this, HomeActivity::class.java).also {
+                        startActivity(it)
                         finish()
                     }
                 }
@@ -72,10 +70,15 @@ class LoginActivity : AppCompatActivity(), KodeinAware {
                     binding.btnLogin.visibility = View.INVISIBLE
                     binding.btnToRegister.isEnabled = false
                 }
+                else -> {}
             }
         })
 
-        viewModel.checkLogin()
-
+        viewModel.isLoggedIn.observe(this, {
+            Intent(this, HomeActivity::class.java).also { intent_ ->
+                startActivity(intent_)
+                finish()
+            }
+        })
     }
 }

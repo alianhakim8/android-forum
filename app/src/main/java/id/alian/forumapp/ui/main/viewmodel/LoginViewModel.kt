@@ -2,9 +2,9 @@ package id.alian.forumapp.ui.main.viewmodel
 
 import android.app.Application
 import android.content.Context
+import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -14,13 +14,12 @@ import id.alian.forumapp.data.api.response.RegisterResponse
 import id.alian.forumapp.data.model.User
 import id.alian.forumapp.data.repository.LoginRepository
 import id.alian.forumapp.utils.Constants
-import id.alian.forumapp.utils.Constants.CANNOT_BE_EMPTY
-import id.alian.forumapp.utils.Constants.CONVERSION_ERROR
-import id.alian.forumapp.utils.Constants.LOGIN_VIEW_MODEL
-import id.alian.forumapp.utils.Constants.NETWORK_FAILURE
-import id.alian.forumapp.utils.Constants.NO_INTERNET
-import id.alian.forumapp.utils.Constants.TOKEN
-import id.alian.forumapp.utils.Constants.TOKEN_PREF_KEY
+import id.alian.forumapp.utils.Constants.Hint_Empty_Field
+import id.alian.forumapp.utils.Constants.Error_Conversion_Error
+import id.alian.forumapp.utils.Constants.Error_Network_Failure
+import id.alian.forumapp.utils.Constants.Error_No_Internet
+import id.alian.forumapp.utils.Constants.Extra_Token
+import id.alian.forumapp.utils.Constants.Shared_Token_Pref
 import id.alian.forumapp.utils.Resource
 import id.alian.forumapp.utils.ResponseHelper
 import kotlinx.coroutines.Dispatchers
@@ -32,12 +31,17 @@ class LoginViewModel(
     private val repository: LoginRepository
 ) : AndroidViewModel(app) {
 
-    val login: MutableLiveData<Resource<LoginResponse>> = MutableLiveData()
-    val register: MutableLiveData<Resource<RegisterResponse>> = MutableLiveData()
-    val isLoggedIn: MutableLiveData<Boolean> = MutableLiveData()
+    val login = MutableLiveData<Resource<LoginResponse>>()
+    val register = MutableLiveData<Resource<RegisterResponse>>()
+    val isLoggedIn = MutableLiveData<Boolean>()
+
+    private val sharedPref: SharedPreferences = app.applicationContext.getSharedPreferences(
+        Shared_Token_Pref,
+        Context.MODE_PRIVATE
+    )
 
     init {
-        getTokenInfo()
+        checkLogin()
     }
 
     private fun hasInternetConnection(): Boolean {
@@ -65,27 +69,21 @@ class LoginViewModel(
                     val response = repository.login(email, password)
                     login.postValue(ResponseHelper().handleResponse(response))
                     response.body()?.let {
-                        val sharedPref =
-                            app.applicationContext.getSharedPreferences(
-                                TOKEN_PREF_KEY,
-                                Context.MODE_PRIVATE
-                            ) ?: return
                         with(sharedPref.edit()) {
-                            putString(TOKEN, response.body()!!.data)
+                            putString(Extra_Token, response.body()!!.data)
                             apply()
                         }
-                        saveUserInfo(it)
-                    }
+                                      }
                 } else {
-                    login.postValue(Resource.Error(CANNOT_BE_EMPTY))
+                    login.postValue(Resource.Error(Hint_Empty_Field))
                 }
             } else {
-                login.postValue(Resource.Error(NO_INTERNET))
+                login.postValue(Resource.Error(Error_No_Internet))
             }
         } catch (t: Throwable) {
             when (t) {
-                is IOException -> login.postValue(Resource.Error(NETWORK_FAILURE))
-                else -> login.postValue(Resource.Error(CONVERSION_ERROR))
+                is IOException -> login.postValue(Resource.Error(Error_Network_Failure))
+                else -> login.postValue(Resource.Error(Error_Conversion_Error))
             }
         }
     }
@@ -95,7 +93,7 @@ class LoginViewModel(
         try {
             if (hasInternetConnection()) {
                 if (user.name.isBlank() || user.password.isBlank() || user.passwordConfirmation.isBlank()) {
-                    register.postValue(Resource.Error(CANNOT_BE_EMPTY))
+                    register.postValue(Resource.Error(Hint_Empty_Field))
                 } else if (user.passwordConfirmation != user.password) {
                     register.postValue(Resource.Error("password harus sama"))
                 } else if (user.password.length < 8) {
@@ -107,8 +105,8 @@ class LoginViewModel(
             }
         } catch (t: Throwable) {
             when (t) {
-                is IOException -> register.postValue(Resource.Error(NETWORK_FAILURE))
-                else -> register.postValue(Resource.Error(Constants.CONVERSION_ERROR))
+                is IOException -> register.postValue(Resource.Error(Error_Network_Failure))
+                else -> register.postValue(Resource.Error(Constants.Error_Conversion_Error))
             }
         }
     }
@@ -121,28 +119,15 @@ class LoginViewModel(
         safeRegisterCall(user)
     }
 
-    private fun saveUserInfo(data: LoginResponse) = viewModelScope.launch(Dispatchers.IO) {
-        repository.saveUserInfo(data)
-    }
-
-    private fun getTokenInfo() = viewModelScope.launch(Dispatchers.IO) {
-        try {
-            val data = repository.getUserInfo()
-            if (data.data.isNotEmpty()) {
-                isLoggedIn.postValue(true)
-            }
-        } catch (t: Throwable) {
-            Log.d(LOGIN_VIEW_MODEL, "getTokenInfo: ${t.message}")
-        }
-    }
-
-    fun checkLogin() {
+    private fun checkLogin() {
         val sharedPref =
             app.applicationContext.getSharedPreferences(
-                TOKEN_PREF_KEY,
+                Shared_Token_Pref,
                 Context.MODE_PRIVATE
             ) ?: return
-        val token = sharedPref.getString(TOKEN, "")
-        Log.d(LOGIN_VIEW_MODEL, "checkLogin: $token")
+        val token = sharedPref.getString(Extra_Token, null)
+        if (token != null) {
+            isLoggedIn.postValue(true)
+        }
     }
 }

@@ -2,41 +2,41 @@ package id.alian.forumapp.utils
 
 object Constants {
     // remote server const
-    const val BASE_URL = "https://235a-103-147-9-139.ngrok.io/api/"
+    const val Base_URL = "https://df1e-103-147-9-139.ngrok.io/api/"
 
     // put extra const
-    const val KEY_QUESTION = "question_extra"
-    const val TOKEN = "token"
+    const val Extra_Question = "question_extra"
+    const val Extra_Token = "token"
 
     // Log TAG
-    const val MAIN_ACTIVITY = "Main Activity"
-    const val HOME_ACTIVITY = "Home Activity"
-    const val LOGIN_ACTIVITY = "Login Activity"
-    const val DETAIL_QUESTION_ACTIVITY = "DetailQuestion Activity"
+    const val Log_Main_Activity = "Main Activity"
+    const val Log_Home_Activity = "Home Activity"
+    const val Log_Login_Activity = "Login Activity"
+    const val Log_Detail_Question_Activity = "DetailQuestion Activity"
 
-    const val MAIN_VIEW_MODEL = "Main ViewModel"
-    const val LOGIN_VIEW_MODEL = "Auth ViewModel"
-    const val QUESTION_VIEW_MODEL = "Question ViewModel"
+    const val Log_Main_ViewModel = "Main ViewModel"
+    const val Log_Login_ViewModel = "Auth ViewModel"
+    const val Log_Question_ViewModel = "Question ViewModel"
 
-    const val PROFILE_FRAGMENT = "Profile Fragment"
-    const val HOME_FRAGMENT = "Home Fragment"
+    const val Log_Profile_Fragment = "Profile Fragment"
+    const val Log_Home_Fragment = "Home Fragment"
 
     // upload image const
-    const val REQUEST_CODE_IMAGE_PICKER = 100
+    const val Request_Code_Image_Picker = 100
 
     // Route Const
-    const val AUTH = "auth"
-    const val QUESTION = "question"
-    const val ANSWER = "answer"
-    const val HEADER_AUTH = "Authorization"
+    const val Route_Auth = "auth"
+    const val Route_Question = "question"
+    const val Route_Answer = "answer"
+    const val Route_Header_Auth = "Authorization"
 
     // message
-    const val NO_INTERNET = "Tidak ada koneksi internet"
-    const val CANNOT_BE_EMPTY = "Tidak boleh kosong"
-    const val CONVERSION_ERROR = "Conversion Error"
-    const val NETWORK_FAILURE = "Network Failure"
-    const val CHOICE_IMAGE = "pilih gambar terlebih dahulu"
-    const val SERVER_ERROR = "Server Error"
-    const val FAILED = "Failed"
-    const val TOKEN_PREF_KEY = "Token Preferences"
+    const val Error_No_Internet = "tidak ada koneksi internet"
+    const val Error_Conversion_Error = "Conversion Error"
+    const val Error_Network_Failure = "Network Failure"
+    const val Error_Server_Error = "Server Error"
+    const val Hint_Choice_Image = "pilih gambar terlebih dahulu"
+    const val Error_Failed = "failed"
+    const val Hint_Empty_Field = "tidak boleh kosong"
+    const val Shared_Token_Pref = "token preferences"
 }

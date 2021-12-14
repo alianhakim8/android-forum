@@ -7,12 +7,17 @@
 
     <fragment
         android:id="@+id/homeFragment"
-        android:name="id.alian.forumapp.ui.base.HomeFragment"
+        android:name="id.alian.forumapp.ui.fragment.HomeFragment"
         android:label="fragment_home"
         tools:layout="@layout/fragment_home" />
     <fragment
         android:id="@+id/profileFragment"
-        android:name="id.alian.forumapp.ui.base.ProfileFragment"
+        android:name="id.alian.forumapp.ui.fragment.ProfileFragment"
         android:label="fragment_profile"
         tools:layout="@layout/fragment_profile" />
+    <fragment
+        android:id="@+id/detailBottomSheetFragment"
+        android:name="id.alian.forumapp.ui.fragment.DetailBottomSheetFragment"
+        android:label="fragment_detail_bottom_sheet"
+        tools:layout="@layout/fragment_detail_bottom_sheet" />
 </navigation>

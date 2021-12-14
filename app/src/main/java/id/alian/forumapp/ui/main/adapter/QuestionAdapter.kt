@@ -9,7 +9,7 @@ import coil.load
 import id.alian.forumapp.R
 import id.alian.forumapp.data.model.Question
 import id.alian.forumapp.databinding.MyQuestionItemLayoutBinding
-import id.alian.forumapp.utils.Constants.BASE_URL
+import id.alian.forumapp.utils.Constants.Base_URL
 
 class QuestionAdapter : RecyclerView.Adapter<QuestionAdapter.DataViewHolder>() {
     inner class DataViewHolder(private val binding: MyQuestionItemLayoutBinding) :
@@ -48,9 +48,16 @@ class QuestionAdapter : RecyclerView.Adapter<QuestionAdapter.DataViewHolder>() {
                     it(question)
                 }
             }
+
+            setOnLongClickListener {
+                onLongItemClickListener?.let {
+                    it(question)
+                }
+                true
+            }
         }
         holder.itemView.apply {
-            holder.img.load(BASE_URL + "question/image/${question.image_name}") {
+            holder.img.load(Base_URL + "question/image/${question.image_name}") {
                 placeholder(R.drawable.ic_img)
             }
         }
@@ -61,8 +68,14 @@ class QuestionAdapter : RecyclerView.Adapter<QuestionAdapter.DataViewHolder>() {
     }
 
     private var onItemClickListener: ((Question) -> Unit)? = null
+    private var onLongItemClickListener: ((Question) -> Unit)? = null
+
 
     fun setOnItemClickListener(listener: (Question) -> Unit) {
         onItemClickListener = listener
+    }
+
+    fun setOnLongItemClickListener(listener: (Question) -> Unit) {
+        onLongItemClickListener = listener
     }
 }

@@ -1,7 +1,8 @@
-package id.alian.forumapp.ui.base
+package id.alian.forumapp.ui.fragment
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,9 +16,9 @@ import id.alian.forumapp.ui.main.view.HomeActivity
 import id.alian.forumapp.ui.main.view.question.AddQuestionActivity
 import id.alian.forumapp.ui.main.view.question.DetailQuestionActivity
 import id.alian.forumapp.ui.main.viewmodel.MainViewModel
-import id.alian.forumapp.utils.Constants
-import id.alian.forumapp.utils.Constants.KEY_QUESTION
-import id.alian.forumapp.utils.Constants.TOKEN
+import id.alian.forumapp.utils.Constants.Extra_Question
+import id.alian.forumapp.utils.Constants.Extra_Token
+import id.alian.forumapp.utils.Constants.Log_Home_Fragment
 import id.alian.forumapp.utils.Resource
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
@@ -31,7 +32,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         val view = binding.root
@@ -47,8 +48,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
         questionAdapter.setOnItemClickListener { question ->
             Intent(context, DetailQuestionActivity::class.java).also {
-                it.putExtra(TOKEN, token)
-                it.putExtra(KEY_QUESTION, question)
+                it.putExtra(Extra_Token, token)
+                it.putExtra(Extra_Question, question)
                 startActivity(it)
             }
         }
@@ -67,6 +68,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         viewModel.questions.observe(viewLifecycleOwner, {
             when (it) {
                 is Resource.Success -> {
+                    Log.d(Log_Home_Fragment, "questionUI: $it")
                     questionAdapter.differ.submitList(it.data?.data)
                     binding.recyclerView.visibility = View.VISIBLE
                     binding.swipeUpRefresh.isRefreshing = false
@@ -88,7 +90,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         })
         binding.fab.setOnClickListener {
             Intent(context, AddQuestionActivity::class.java).also {
-                it.putExtra(Constants.TOKEN, token)
+                it.putExtra(Extra_Token, token)
                 startActivity(it)
             }
         }

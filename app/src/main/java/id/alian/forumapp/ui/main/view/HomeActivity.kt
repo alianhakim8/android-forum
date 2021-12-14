@@ -9,7 +9,7 @@ import id.alian.forumapp.R
 import id.alian.forumapp.databinding.ActivityHomeBinding
 import id.alian.forumapp.ui.main.viewmodel.MainViewModel
 import id.alian.forumapp.ui.main.viewmodel.factory.MainViewModelFactory
-import id.alian.forumapp.utils.Constants.TOKEN
+import id.alian.forumapp.utils.Constants.Extra_Token
 import org.kodein.di.KodeinAware
 import org.kodein.di.android.kodein
 import org.kodein.di.generic.instance
@@ -30,7 +30,7 @@ class HomeActivity : AppCompatActivity(), KodeinAware {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        token = intent.getStringExtra(TOKEN).toString()
+        token = intent.getStringExtra(Extra_Token).toString()
 
         viewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]
 

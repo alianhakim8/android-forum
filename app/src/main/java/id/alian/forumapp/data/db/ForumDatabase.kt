@@ -4,11 +4,11 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import id.alian.forumapp.data.api.response.LoginResponse
+import id.alian.forumapp.data.model.Question
 import id.alian.forumapp.data.model.User
 
 @Database(
-    entities = [LoginResponse::class, User::class],
+    entities = [User::class, Question::class],
     version = 1,
 )
 abstract class ForumDatabase : RoomDatabase() {
@@ -30,7 +30,7 @@ abstract class ForumDatabase : RoomDatabase() {
             Room.databaseBuilder(
                 context.applicationContext,
                 ForumDatabase::class.java,
-                "forum.db"
+                "forum"
             ).build()
     }
 }

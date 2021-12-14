@@ -5,19 +5,17 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import coil.load
-import id.alian.forumapp.R
 import id.alian.forumapp.data.model.Question
 import id.alian.forumapp.databinding.MainItemLayoutBinding
-import id.alian.forumapp.utils.Constants.BASE_URL
 
 class HomeAdapter : RecyclerView.Adapter<HomeAdapter.DataViewHolder>() {
+
     inner class DataViewHolder(private val binding: MainItemLayoutBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(question: Question) {
             binding.textViewTitle.text = question.title
             binding.textViewUserEmail.text = question.user.email
-            binding.textViewUserDescription.text = question.description
+//            binding.textViewUserDescription.text = question.description
         }
 
         val img = binding.imageViewAvatar
@@ -50,11 +48,12 @@ class HomeAdapter : RecyclerView.Adapter<HomeAdapter.DataViewHolder>() {
                 }
             }
         }
-        holder.itemView.apply {
-            holder.img.load(BASE_URL + "question/image/${question.image_name}"){
-                placeholder(R.drawable.ic_img)
-            }
-        }
+//        holder.itemView.apply {
+//            holder.img.load(Base_URL + "question/image/${question.image_name}") {
+////                transformations(RoundedCornersTransformation(15f))
+//                placeholder(R.drawable.ic_img)
+//            }
+//        }
     }
 
     override fun getItemCount(): Int {

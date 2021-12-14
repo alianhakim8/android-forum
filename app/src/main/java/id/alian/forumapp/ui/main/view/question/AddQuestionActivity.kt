@@ -10,8 +10,7 @@ import id.alian.forumapp.data.model.UploadRequestBody.UploadCallback
 import id.alian.forumapp.databinding.ActivityAddQuestionBinding
 import id.alian.forumapp.ui.main.viewmodel.MainViewModel
 import id.alian.forumapp.ui.main.viewmodel.factory.MainViewModelFactory
-import id.alian.forumapp.utils.Constants.REQUEST_CODE_IMAGE_PICKER
-import id.alian.forumapp.utils.Constants.TOKEN
+import id.alian.forumapp.utils.Constants.Request_Code_Image_Picker
 import id.alian.forumapp.utils.Resource
 import id.alian.forumapp.utils.hideKeyboard
 import org.kodein.di.KodeinAware
@@ -27,38 +26,27 @@ class AddQuestionActivity : AppCompatActivity(), KodeinAware, UploadCallback {
     private val factory: MainViewModelFactory by instance()
 
     lateinit var viewModel: MainViewModel
-    lateinit var token: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAddQuestionBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        token = intent.getStringExtra(TOKEN).toString()
-
         viewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]
 
         binding.btnAddQuestion.setOnClickListener {
-//            viewModel.addQuestion(
-//                token = "Bearer $token",
-//                title = binding.etTitle.text.toString().trim(),
-//                description = binding.etDesc.text.toString().trim()
-//            )
-
-
             viewModel.addQuestionWithImage(
-                token = "Bearer $token",
                 title = binding.etTitle.text.toString().trim(),
                 description = binding.etDesc.text.toString().trim()
             )
         }
 
-        binding.btnSelectImage.setOnClickListener {
+        binding.imageViewQuestion.setOnClickListener {
             Intent(Intent.ACTION_PICK).also {
                 it.type = "image/*"
                 val mimeTypes = arrayOf("image/jpg", "image/png")
                 it.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
-                startActivityForResult(it, REQUEST_CODE_IMAGE_PICKER)
+                startActivityForResult(it, Request_Code_Image_Picker)
             }
         }
 
@@ -85,10 +73,10 @@ class AddQuestionActivity : AppCompatActivity(), KodeinAware, UploadCallback {
                 is Resource.Loading -> {
                     binding.progressBar.visibility = View.VISIBLE
                     binding.btnAddQuestion.visibility = View.INVISIBLE
-                    binding.btnSelectImage.visibility = View.INVISIBLE
                     binding.etDesc.isEnabled = false
                     binding.etTitle.isEnabled = false
                 }
+                else -> {}
             }
         })
 

@@ -5,6 +5,9 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
+import coil.transform.RoundedCornersTransformation
+import id.alian.forumapp.R
 import id.alian.forumapp.data.model.Answers
 import id.alian.forumapp.databinding.AnswerItemLayoutBinding
 
@@ -14,6 +17,9 @@ class AnswerAdapter : RecyclerView.Adapter<AnswerAdapter.DataViewHolder>() {
         fun bind(answer: Answers) {
             binding.tvName.text = answer.user.name
             binding.tvDesc.text = answer.description
+            binding.imageView.load(R.drawable.ic_person) {
+                transformations(RoundedCornersTransformation(20f))
+            }
         }
     }
 

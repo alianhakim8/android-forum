@@ -4,26 +4,29 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities.*
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import id.alian.forumapp.ForumApplication
-import id.alian.forumapp.data.api.response.AddAnswerResponse
-import id.alian.forumapp.data.api.response.AddQuestionResponse
-import id.alian.forumapp.data.api.response.AnswerResponse
-import id.alian.forumapp.data.api.response.QuestionResponse
+import id.alian.forumapp.data.api.response.*
+import id.alian.forumapp.data.model.Question
 import id.alian.forumapp.data.model.UploadRequestBody
 import id.alian.forumapp.data.model.User
 import id.alian.forumapp.data.repository.MainRepository
 import id.alian.forumapp.utils.Constants
-import id.alian.forumapp.utils.Constants.CANNOT_BE_EMPTY
-import id.alian.forumapp.utils.Constants.CHOICE_IMAGE
-import id.alian.forumapp.utils.Constants.CONVERSION_ERROR
-import id.alian.forumapp.utils.Constants.NETWORK_FAILURE
-import id.alian.forumapp.utils.Constants.NO_INTERNET
+import id.alian.forumapp.utils.Constants.Error_Conversion_Error
+import id.alian.forumapp.utils.Constants.Error_Network_Failure
+import id.alian.forumapp.utils.Constants.Error_No_Internet
+import id.alian.forumapp.utils.Constants.Extra_Token
+import id.alian.forumapp.utils.Constants.Hint_Choice_Image
+import id.alian.forumapp.utils.Constants.Hint_Empty_Field
+import id.alian.forumapp.utils.Constants.Log_Main_ViewModel
+import id.alian.forumapp.utils.Constants.Shared_Token_Pref
 import id.alian.forumapp.utils.Resource
 import id.alian.forumapp.utils.getFileName
 import kotlinx.coroutines.Dispatchers
@@ -41,30 +44,42 @@ import java.io.IOException
 
 class MainViewModel(
     val app: Application,
-    private val repository: MainRepository
+    private val repository: MainRepository,
 ) : AndroidViewModel(app) {
 
     // question
-    val questions: MutableLiveData<Resource<QuestionResponse>> = MutableLiveData()
-    val myQuestion: MutableLiveData<Resource<QuestionResponse>> = MutableLiveData()
-    val imageUri: MutableLiveData<Uri> = MutableLiveData()
+    val questions = MutableLiveData<Resource<QuestionResponse>>()
+    val myQuestion = MutableLiveData<Resource<QuestionResponse>>()
+    val imageUri = MutableLiveData<Uri>()
+    val updateQuestion = MutableLiveData<Resource<UpdateQuestionResponse>>()
+
 
     // profile
-    val profile: MutableLiveData<Resource<User>> = MutableLiveData()
+    val profile = MutableLiveData<Resource<User>>()
 
     // answer
-    val answers: MutableLiveData<Resource<AnswerResponse>> = MutableLiveData()
-    val addAnswers: MutableLiveData<Resource<AddAnswerResponse>> = MutableLiveData()
+    val answers = MutableLiveData<Resource<AnswerResponse>>()
+    val addAnswers = MutableLiveData<Resource<AddAnswerResponse>>()
 
     // for add question activity
-    val uploadedImage: MutableLiveData<Boolean> = MutableLiveData()
-    val add: MutableLiveData<Resource<AddQuestionResponse>> = MutableLiveData()
+    val uploadedImage = MutableLiveData<Boolean>()
+    val add = MutableLiveData<Resource<AddQuestionResponse>>()
     var selectedImage: Uri? = null
+
+    // shared preferences for get jwt token
+    private val sharedPref: SharedPreferences =
+        app.applicationContext.getSharedPreferences(Shared_Token_Pref, Context.MODE_PRIVATE)
+    private val token = sharedPref.getString(Extra_Token, null)
+
+    // dialog question on profile fragment
+    val updateActivity = MutableLiveData<Question>()
 
     init {
         getQuestions()
+        getProfile()
     }
 
+    // check internet connection
     private fun hasInternetConnection(): Boolean {
         val connectivityManager = getApplication<ForumApplication>().getSystemService(
             Context.CONNECTIVITY_SERVICE
@@ -82,6 +97,7 @@ class MainViewModel(
         }
     }
 
+    // handling response
     private fun <T> handleResponse(response: Response<T>): Resource<T> {
         if (response.isSuccessful) {
             uploadedImage.postValue(true)
@@ -92,124 +108,128 @@ class MainViewModel(
         return Resource.Error(response.message())
     }
 
-    // question
+    // safe API Call
     private suspend fun safeGetQuestionCall() {
         questions.postValue(Resource.Loading())
         try {
             if (hasInternetConnection()) {
                 val response = repository.getQuestions()
-                questions.postValue(handleResponse(response))
+                if (response.isSuccessful) {
+                    questions.postValue(handleResponse(response))
+                    response.body()?.data?.forEach {
+                        repository.saveQuestionToLocal(it)
+                    }
+                } else {
+                    repository.getQuestionLocal().also {
+                        val oldQuestion = QuestionResponse(true, "Retrieve all question", it)
+                        questions.postValue(Resource.Success(oldQuestion))
+                    }
+                }
             } else {
-                questions.postValue(Resource.Error(NO_INTERNET))
+                questions.postValue(Resource.Error(Error_No_Internet))
             }
         } catch (t: Throwable) {
+            Log.d(Log_Main_ViewModel, "safeGetQuestionCall: ${t.localizedMessage}")
+            repository.getQuestionLocal()
             when (t) {
-                is IOException -> questions.postValue(Resource.Error(NETWORK_FAILURE))
-                else -> questions.postValue(Resource.Error(CONVERSION_ERROR))
+                is IOException -> questions.postValue(Resource.Error(Error_Network_Failure))
+                else -> questions.postValue(Resource.Error(Error_Conversion_Error))
             }
         }
     }
 
-    fun getQuestions() = viewModelScope.launch(Dispatchers.IO) {
-        safeGetQuestionCall()
-    }
-
     private suspend fun safeAddQuestionWithImageCall(
-        token: String,
-        title_: String,
-        desc: String,
-        file: File
+        token: String, title_: String, desc: String, file: File,
     ) {
         try {
             if (hasInternetConnection()) {
                 if (selectedImage == null) {
-                    add.postValue(Resource.Error(CHOICE_IMAGE))
+                    add.postValue(Resource.Error(Hint_Choice_Image))
                     return
-                }
-                if (title_.isNotEmpty() && desc.isNotEmpty()) {
-                    add.postValue(Resource.Loading())
-                    val body = UploadRequestBody(file, "image")
-
-                    val response = repository.addQuestionWithImage(
-                        token,
-                        image = MultipartBody.Part.createFormData(
-                            "image_name",
-                            file.name,
-                            body
-                        ),
-                        title = title_.toRequestBody("multipart/form-data".toMediaTypeOrNull()),
-                        description = desc.toRequestBody("multipart/form-data".toMediaTypeOrNull())
-                    )
-                    if (response.isSuccessful) {
-                        add.postValue(Resource.SuccessNoData())
-                        runBlocking {
-                            delay(1000L)
-                            uploadedImage.postValue(true)
-                        }
-                    }
                 } else {
-                    add.postValue(Resource.Error(CANNOT_BE_EMPTY))
+                    if (title_.isNotEmpty() && desc.isNotEmpty()) {
+                        add.postValue(Resource.Loading())
+                        val body = UploadRequestBody(file, "image")
+                        val response = repository.addQuestionWithImage(
+                            token,
+                            image = MultipartBody.Part.createFormData(
+                                "image_name",
+                                file.name,
+                                body
+                            ),
+                            title = title_.toRequestBody("multipart/form-data".toMediaTypeOrNull()),
+                            description = desc.toRequestBody("multipart/form-data".toMediaTypeOrNull())
+                        )
+                        if (response.isSuccessful) {
+                            add.postValue(Resource.SuccessNoData())
+                            runBlocking {
+                                delay(1000L)
+                                uploadedImage.postValue(true)
+                            }
+                        }
+                    } else {
+                        add.postValue(Resource.Error(Hint_Empty_Field))
+                    }
                 }
+
             } else {
-                add.postValue(Resource.Error(NO_INTERNET))
+                add.postValue(Resource.Error(Error_No_Internet))
             }
         } catch (t: Throwable) {
             when (t) {
-                is IOException -> profile.postValue(Resource.Error(NETWORK_FAILURE))
-                else -> profile.postValue(Resource.Error(CONVERSION_ERROR))
+                is IOException -> profile.postValue(Resource.Error(Error_Network_Failure))
+                else -> profile.postValue(Resource.Error(Error_Conversion_Error))
             }
         }
     }
 
-    fun addQuestionWithImage(token: String, title: String, description: String) {
-        val parcelFileDescriptor =
-            app.contentResolver.openFileDescriptor(selectedImage!!, "r", null) ?: return
-        val file =
-            File(app.cacheDir, app.contentResolver.getFileName(selectedImage!!))
-        val inputStream = FileInputStream(parcelFileDescriptor.fileDescriptor)
-        val outputStream = FileOutputStream(file)
-        inputStream.copyTo(outputStream)
-        viewModelScope.launch {
-            safeAddQuestionWithImageCall(token, title, description, file)
+    private suspend fun safeAddQuestion(
+        token: String, title: String, description: String,
+    ) {
+        add.postValue(Resource.Loading())
+        if (title.isEmpty() && description.isEmpty()) {
+            add.postValue(Resource.Error("tidak boleh kosong"))
+        } else {
+            val response = repository.addQuestion(token, title, description)
+            handleResponse(response)
+            add.postValue(Resource.SuccessNoData())
         }
     }
 
-    fun checkResultCode(resultCode: Int, requestCode: Int, data: Intent?) {
-        if (resultCode == Activity.RESULT_OK) {
-            when (requestCode) {
-                Constants.REQUEST_CODE_IMAGE_PICKER -> {
-                    selectedImage = data?.data
-                    if (selectedImage != null) {
-                        imageUri.postValue(selectedImage!!)
-                    }
-                }
-            }
+    private fun safeDeleteQuestionCall(question: Question) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteQuestionById("Bearer $token", question.questionId)
+            getProfile()
         }
     }
 
-    // profile
     private suspend fun safeGetProfileCall(token: String) {
         profile.postValue(Resource.Loading())
         try {
             if (hasInternetConnection()) {
-                val response = repository.getUserProfile(token = token)
-                profile.postValue(handleResponse(response))
+                val response = repository.getUserProfile(token)
+                if (response.isSuccessful) {
+                    response.body()?.id?.let {
+                        getQuestionByUserId(it)
+                        repository.saveUserToLocal(response.body()!!)
+                        profile.postValue(Resource.Success(response.body()!!))
+                    }
+                } else {
+                    repository.getLocalUser().also {
+                        profile.postValue(Resource.Success(it))
+                    }
+                }
             } else {
-                profile.postValue(Resource.Error(NO_INTERNET))
+                profile.postValue(Resource.Error(Error_No_Internet))
             }
         } catch (t: Throwable) {
             when (t) {
-                is IOException -> profile.postValue(Resource.Error(NETWORK_FAILURE))
-                else -> profile.postValue(Resource.Error(CONVERSION_ERROR))
+                is IOException -> profile.postValue(Resource.Error(Error_Network_Failure))
+                else -> profile.postValue(Resource.Error(Error_Conversion_Error))
             }
         }
     }
 
-    fun getProfile(token: String) = viewModelScope.launch(Dispatchers.IO) {
-        safeGetProfileCall(token)
-    }
-
-    // answer
     private suspend fun safeGetQuestionByUserId(userId: Int) {
         myQuestion.postValue(Resource.Loading())
         try {
@@ -217,39 +237,36 @@ class MainViewModel(
                 val response = repository.getQuestionByUserId(userId)
                 myQuestion.postValue(handleResponse(response))
             } else {
-                myQuestion.postValue(Resource.Error(NO_INTERNET))
+                myQuestion.postValue(Resource.Error(Error_No_Internet))
             }
         } catch (t: Throwable) {
             when (t) {
-                is IOException -> myQuestion.postValue(Resource.Error(NETWORK_FAILURE))
-                else -> myQuestion.postValue(Resource.Error(CONVERSION_ERROR))
+                is IOException -> myQuestion.postValue(Resource.Error(Error_Network_Failure))
+                else -> myQuestion.postValue(Resource.Error(Error_Conversion_Error))
             }
         }
     }
 
-    fun getQuestionByUserId(userId: Int) = viewModelScope.launch(Dispatchers.IO) {
-        safeGetQuestionByUserId(userId)
-    }
-
-    private suspend fun safeGetAnswers(question: Int) {
-        answers.postValue(Resource.Loading())
-        try {
-            if (hasInternetConnection()) {
-                val response = repository.getAnswers(question)
-                answers.postValue(handleResponse(response))
+    private suspend fun safeUpdateQuestion(
+        id: Int,
+        title: String,
+        description: String,
+    ) {
+        updateQuestion.postValue(Resource.Loading())
+        if (title.isEmpty() || description.isEmpty()) {
+            updateQuestion.postValue(Resource.Error("tidak boleh kosong"))
+        } else {
+            val response =
+                repository.updateQuestion("Bearer $token",
+                    id,
+                    title,
+                    description)
+            if (response.isSuccessful) {
+                handleResponse(response)
             } else {
-                answers.postValue(Resource.Error(NO_INTERNET))
-            }
-        } catch (t: Throwable) {
-            when (t) {
-                is IOException -> profile.postValue(Resource.Error(NETWORK_FAILURE))
-                else -> profile.postValue(Resource.Error(CONVERSION_ERROR))
+                updateQuestion.postValue(Resource.Error(response.message()))
             }
         }
-    }
-
-    fun getAnswers(question_id: Int) = viewModelScope.launch(Dispatchers.IO) {
-        safeGetAnswers(question_id)
     }
 
     private suspend fun safeAddAnswerCall(token: String, questionId: Int, description: String) {
@@ -260,21 +277,137 @@ class MainViewModel(
                     val response = repository.addAnswer(token, questionId, description)
                     addAnswers.postValue(handleResponse(response))
                 } else {
-                    addAnswers.postValue(Resource.Error(CANNOT_BE_EMPTY))
+                    addAnswers.postValue(Resource.Error(Hint_Empty_Field))
                 }
             } else {
-                addAnswers.postValue(Resource.Error(NO_INTERNET))
+                addAnswers.postValue(Resource.Error(Error_No_Internet))
             }
         } catch (t: Throwable) {
             when (t) {
-                is IOException -> addAnswers.postValue(Resource.Error(NETWORK_FAILURE))
-                else -> addAnswers.postValue(Resource.Error(CONVERSION_ERROR))
+                is IOException -> addAnswers.postValue(Resource.Error(Error_Network_Failure))
+                else -> addAnswers.postValue(Resource.Error(Error_Conversion_Error))
             }
         }
     }
 
-    fun addAnswer(token: String, questionId: Int, description: String) =
-        viewModelScope.launch(Dispatchers.IO) {
-            safeAddAnswerCall(token, questionId, description)
+    private suspend fun safeGetAnswers(question: Int) {
+        try {
+            if (hasInternetConnection()) {
+                answers.postValue(Resource.Loading())
+                val response = repository.getAnswers(question)
+                answers.postValue(handleResponse(response))
+
+            } else {
+                answers.postValue(Resource.Error(Error_No_Internet))
+            }
+        } catch (t: Throwable) {
+            when (t) {
+                is IOException -> profile.postValue(Resource.Error(Error_Network_Failure))
+                else -> profile.postValue(Resource.Error(Error_Conversion_Error))
+            }
         }
+    }
+
+    // Implement Method
+    fun getQuestions() = viewModelScope.launch(Dispatchers.IO) {
+        safeGetQuestionCall()
+    }
+
+    fun addQuestionWithImage(title: String, description: String) {
+        if (selectedImage != null) {
+            val parcelFileDescriptor =
+                app.contentResolver.openFileDescriptor(selectedImage!!, "r", null) ?: return
+            val file =
+                File(app.cacheDir, app.contentResolver.getFileName(selectedImage!!))
+            val inputStream = FileInputStream(parcelFileDescriptor.fileDescriptor)
+            val outputStream = FileOutputStream(file)
+            inputStream.copyTo(outputStream)
+            if (token != null) {
+                viewModelScope.launch {
+                    safeAddQuestionWithImageCall("Bearer $token", title, description, file)
+                }
+            }
+        } else {
+            addQuestion(title, description)
+        }
+    }
+
+    private fun addQuestion(title: String, description: String) {
+        if (token != null) {
+            viewModelScope.launch(Dispatchers.IO) {
+                safeAddQuestion("Bearer $token", title, description)
+            }
+        }
+    }
+
+    fun checkResultCode(resultCode: Int, requestCode: Int, data: Intent?) {
+        if (resultCode == Activity.RESULT_OK) {
+            when (requestCode) {
+                Constants.Request_Code_Image_Picker -> {
+                    selectedImage = data?.data
+                    if (selectedImage != null) {
+                        imageUri.postValue(selectedImage!!)
+                    }
+                }
+            }
+        }
+    }
+
+    fun getProfile() {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (token != null) {
+                safeGetProfileCall("Bearer $token")
+            }
+        }
+    }
+
+    private fun getQuestionByUserId(userId: Int) = viewModelScope.launch(Dispatchers.IO) {
+        safeGetQuestionByUserId(userId)
+    }
+
+    fun updateQuestion(id: Int, title: String, description: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            safeUpdateQuestion(id, title, description)
+        }
+    }
+
+    fun getAnswers(question_id: Int) = viewModelScope.launch(Dispatchers.IO) {
+        safeGetAnswers(question_id)
+    }
+
+    // ADD answer
+    fun addAnswer(questionId: Int, description: String) {
+        if (token != null) {
+            viewModelScope.launch(Dispatchers.IO) {
+                safeAddAnswerCall("Bearer $token", questionId, description)
+            }
+        }
+    }
+
+    fun checkItemQuestionDialog(value: Int, question: Question) {
+        when (value) {
+            0 -> {
+                // delete question
+                if (token != null) {
+                    safeDeleteQuestionCall(question)
+                }
+            }
+
+            1 -> {
+                updateActivity.postValue(question)
+            }
+        }
+    }
+
+    fun logout() {
+        with(sharedPref.edit()) {
+            remove(Extra_Token)
+            apply()
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.getLocalUser().also {
+                repository.deleteUser(it)
+            }
+        }
+    }
 }

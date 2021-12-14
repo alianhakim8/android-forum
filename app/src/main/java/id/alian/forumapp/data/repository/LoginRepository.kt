@@ -1,7 +1,6 @@
 package id.alian.forumapp.data.repository
 
 import id.alian.forumapp.data.api.ApiService
-import id.alian.forumapp.data.api.response.LoginResponse
 import id.alian.forumapp.data.db.ForumDatabase
 import id.alian.forumapp.data.model.User
 
@@ -13,7 +12,4 @@ class LoginRepository(
 
     suspend fun register(user: User) = apiService.register(user)
 
-    suspend fun saveUserInfo(data: LoginResponse) = db.forumDao().saveToken(data)
-
-    fun getUserInfo() = db.forumDao().getToken()
 }

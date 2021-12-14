@@ -43,10 +43,11 @@ class ResponseHelper {
                 return Resource.Success(result)
             }
         }
-        Log.d(Constants.LOGIN_VIEW_MODEL, "handleLoginRequest: $response")
+        Log.d(Constants.Log_Login_ViewModel, "handleLoginRequest: $response")
         if (response.code() == 400) {
-            return Resource.Error(Constants.FAILED)
+            return Resource.Error(Constants.Error_Failed)
         }
-        return Resource.Error(Constants.SERVER_ERROR)
+        return Resource.Error(Constants.Error_Server_Error)
     }
 }
+

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/detail_question_nav_graph"
+    app:startDestination="@id/detailQuestionFragment">
+
+    <fragment
+        android:id="@+id/detailQuestionFragment"
+        android:name="id.alian.forumapp.ui.fragment.DetailQuestionFragment"
+        android:label="DetailQuestionFragment"
+        tools:layout="@layout/fragment_detail_question">
+        <action
+            android:id="@+id/action_detailQuestionFragment_to_detailBottomSheetFragment2"
+            app:destination="@id/detailBottomSheetFragment2" />
+    </fragment>
+    <dialog
+        android:id="@+id/detailBottomSheetFragment2"
+        android:name="id.alian.forumapp.ui.fragment.DetailBottomSheetFragment"
+        android:label="fragment_detail_bottom_sheet"
+        tools:layout="@layout/fragment_detail_bottom_sheet" >
+        <action
+            android:id="@+id/action_detailBottomSheetFragment2_to_detailQuestionFragment"
+            app:destination="@id/detailQuestionFragment" />
+    </dialog>
+</navigation>

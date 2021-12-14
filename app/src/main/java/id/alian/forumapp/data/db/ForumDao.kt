@@ -1,24 +1,24 @@
 package id.alian.forumapp.data.db
 
 import androidx.room.*
-import id.alian.forumapp.data.api.response.LoginResponse
+import id.alian.forumapp.data.model.Question
 import id.alian.forumapp.data.model.User
 
 @Dao
 interface ForumDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun saveToken(data: LoginResponse)
-
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun saveUser(user: User)
 
-    @Query("SELECT * FROM login_response")
-    fun getToken(): LoginResponse
-
     @Query("SELECT * FROM user")
-    fun getUser(): User
+    fun getLocalUser(): User
+
+    @Query("SELECT * FROM question")
+    fun getLocalQuestion(): List<Question>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveQuestionToLocal(question: Question)
 
     @Delete
-    suspend fun deleteToken(data: LoginResponse)
+    suspend fun deleteUser(user: User)
 
 }
